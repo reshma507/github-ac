@@ -1,0 +1,49 @@
+version: "3.9"
+ 
+services:
+  postgres:
+    image: postgres:15
+    container_name: strapi-postgres
+    restart: always
+    networks:
+      - strapi-net
+    environment:
+      POSTGRES_USER: ${DATABASE_USERNAME}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
+      POSTGRES_DB: ${DATABASE_NAME}     # <-- Creates strapi_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+ 
+  strapi:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: strapi-container
+    restart: always
+    networks:
+      - strapi-net
+    env_file: .env
+    depends_on:
+      - postgres
+    ports:
+      - "1337:1337"
+ 
+  nginx:
+    image: nginx:latest
+    container_name: strapi-nginx
+    restart: always
+    networks:
+      - strapi-net
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+
+networks:
+  strapi-net:
+    driver: bridge
+ 
+volumes:
+  postgres-data:

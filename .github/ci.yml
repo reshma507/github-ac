@@ -1,0 +1,38 @@
+name: CI - Build & Push Strapi
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    outputs:
+      image_tag: ${{ steps.meta.outputs.tag }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set image tag
+        id: meta
+        run: |
+          TAG=${GITHUB_SHA::7}
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+
+      - name: Login to Docker Hub
+        run: |
+          echo "${{ secrets.DOCKERHUB_PASSWORD }}" | docker login \
+            -u "${{ secrets.DOCKERHUB_USERNAME }}" \
+            --password-stdin
+
+      - name: Build Docker image
+        run: |
+          docker build \
+            -t ${{ secrets.DOCKERHUB_USERNAME }}/strapi-app:${{ steps.meta.outputs.tag }} .
+
+      - name: Push Docker image
+        run: |
+          docker push \
+            ${{ secrets.DOCKERHUB_USERNAME }}/strapi-app:${{ steps.meta.outputs.tag }}

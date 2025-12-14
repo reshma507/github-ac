@@ -1,0 +1,12 @@
+node_modules
+build
+.cache
+.git
+Dockerfile
+docker-compose.yml
+.env
+.git
+.terraform
+*.tfstate
+terraform.tfvars
+
