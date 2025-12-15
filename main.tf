@@ -85,6 +85,11 @@ resource "aws_ecr_repository" "strapi" {
   }
 }
 
+# ---------------- CLOUDWATCH LOG GROUP ----------------
+resource "aws_cloudwatch_log_group" "strapi" {
+  name              = "/ecs/strapi-service"
+  retention_in_days = 7
+}
 
 
 
@@ -125,6 +130,10 @@ resource "aws_ecs_task_definition" "strapi" {
   cpu                      = "512"
   memory                   = "1024"
   execution_role_arn       = aws_iam_role.ecs_execution_role.arn
+  
+  depends_on = [
+    aws_cloudwatch_log_group.strapi
+  ]
 
   container_definitions = jsonencode([
     {
