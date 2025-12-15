@@ -76,6 +76,15 @@ resource "aws_db_instance" "postgres" {
 resource "aws_ecr_repository" "strapi" {
   name = "strapi-app"
 }
+# resource "aws_ecr_repository" "strapi" {
+#   name = "strapi-app"
+
+#   lifecycle {
+#     prevent_destroy = false
+#     ignore_changes  = [repository_url]  # Terraform won't fail if repo already exists
+#   }
+# }
+
 
 
 
@@ -120,7 +129,7 @@ resource "aws_ecs_task_definition" "strapi" {
   container_definitions = jsonencode([
     {
       name  = "strapi"
-      image = "${aws_ecr_repository.strapi.repository_url}:${var.image_tag}"
+      image = "${var.ecr_repo_url}:${var.image_tag}"
 
       essential = true
 
