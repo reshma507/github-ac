@@ -106,6 +106,9 @@ resource "aws_iam_role_policy_attachment" "secrets_policy" {
 resource "aws_ecs_cluster" "strapi" {
   name = "strapi-cluster"
 }
+data "aws_secretsmanager_secret" "strapi" {
+  name = "strapi/secrets"
+}
 
 resource "aws_ecs_task_definition" "strapi" {
   family                   = "strapi-task"
@@ -116,26 +119,54 @@ resource "aws_ecs_task_definition" "strapi" {
   execution_role_arn       = aws_iam_role.ecs_execution_role.arn
 
   container_definitions = jsonencode([
-    {
-      name  = "strapi"
-      image = "${aws_ecr_repository.strapi.repository_url}:${var.image_tag}"
+  {
+    name  = "strapi"
+    image = "${aws_ecr_repository.strapi.repository_url}:${var.image_tag}"
 
-      portMappings = [{
-        containerPort = 1337
-      }]
+    portMappings = [{
+      containerPort = 1337
+    }]
 
-      environment = [
-        { name = "HOST", value = "0.0.0.0" },
-        { name = "PORT", value = "1337" },
-        { name = "DATABASE_CLIENT", value = "postgres" },
-        { name = "DATABASE_HOST", value = aws_db_instance.postgres.address },
-        { name = "DATABASE_PORT", value = "5432" },
-        { name = "DATABASE_NAME", value = var.db_name },
-        { name = "DATABASE_USERNAME", value = var.db_username },
-        { name = "DATABASE_PASSWORD", value = var.db_password }
-      ]
-    }
-  ])
+    environment = [
+      { name = "HOST", value = "0.0.0.0" },
+      { name = "PORT", value = "1337" },
+
+      { name = "DATABASE_CLIENT", value = "postgres" },
+      { name = "DATABASE_HOST", value = aws_db_instance.postgres.address },
+      { name = "DATABASE_PORT", value = "5432" },
+      { name = "DATABASE_NAME", value = var.db_name },
+      { name = "DATABASE_USERNAME", value = var.db_username },
+      { name = "DATABASE_PASSWORD", value = var.db_password }
+    ]
+
+    secrets = [
+      {
+        name      = "APP_KEYS"
+        valueFrom = "${data.aws_secretsmanager_secret.strapi.arn}:APP_KEYS::"
+      },
+      {
+        name      = "API_TOKEN_SALT"
+        valueFrom = "${data.aws_secretsmanager_secret.strapi.arn}:API_TOKEN_SALT::"
+      },
+      {
+        name      = "ADMIN_JWT_SECRET"
+        valueFrom = "${data.aws_secretsmanager_secret.strapi.arn}:ADMIN_JWT_SECRET::"
+      },
+      {
+        name      = "TRANSFER_TOKEN_SALT"
+        valueFrom = "${data.aws_secretsmanager_secret.strapi.arn}:TRANSFER_TOKEN_SALT::"
+      },
+      {
+        name      = "ENCRYPTION_KEY"
+        valueFrom = "${data.aws_secretsmanager_secret.strapi.arn}:ENCRYPTION_KEY::"
+      },
+      {
+        name      = "ADMIN_AUTH_SECRET"
+        valueFrom = "${data.aws_secretsmanager_secret.strapi.arn}:ADMIN_AUTH_SECRET::"
+      }
+    ]
+  }
+])
 }
 
 resource "aws_ecs_service" "strapi" {
