@@ -17,10 +17,16 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
+      - name: Ensure ECR repository exists
+        run: |
+          aws ecr describe-repositories --repository-names strapi-app \
+          || aws ecr create-repository --repository-name strapi-app
+
       - uses: aws-actions/amazon-ecr-login@v2
 
       - name: Build & Push Image
         run: |
           TAG=${GITHUB_SHA::7}
-          docker build -t ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/strapi-app:$TAG .
-          docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/strapi-app:$TAG
+          IMAGE=${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/strapi-app:$TAG
+          docker build -t $IMAGE .
+          docker push $IMAGE
