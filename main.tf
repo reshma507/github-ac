@@ -150,13 +150,21 @@ resource "aws_ecs_task_definition" "strapi" {
           hostPort      = 1337
           protocol      = "tcp"
         }
-      ]
-
+      ] 
       environment = [
+       # Server
         { name = "HOST", value = "0.0.0.0" },
         { name = "PORT", value = "1337" },
 
-        # Database
+        # Strapi Secrets (same as docker run)
+        { name = "APP_KEYS", value = var.app_keys },
+        { name = "API_TOKEN_SALT", value = var.api_token_salt },
+        { name = "ADMIN_JWT_SECRET", value = var.admin_jwt_secret },
+        { name = "TRANSFER_TOKEN_SALT", value = var.transfer_token_salt },
+        { name = "ENCRYPTION_KEY", value = var.encryption_key },
+        { name = "ADMIN_AUTH_SECRET", value = var.admin_auth_secret },
+        { name = "NODE_TLS_REJECT_UNAUTHORIZED", value = "0" },
+
         { name = "DATABASE_CLIENT", value = "postgres" },
         { name = "DATABASE_HOST", value = aws_db_instance.postgres.address },
         { name = "DATABASE_PORT", value = "5432" },
@@ -164,14 +172,11 @@ resource "aws_ecs_task_definition" "strapi" {
         { name = "DATABASE_USERNAME", value = var.db_username },
         { name = "DATABASE_PASSWORD", value = var.db_password },
 
-        # Strapi secrets
-        { name = "APP_KEYS", value = var.app_keys },
-        { name = "API_TOKEN_SALT", value = var.api_token_salt },
-        { name = "ADMIN_JWT_SECRET", value = var.admin_jwt_secret },
-        { name = "TRANSFER_TOKEN_SALT", value = var.transfer_token_salt },
-        { name = "ENCRYPTION_KEY", value = var.encryption_key },
-        { name = "ADMIN_AUTH_SECRET", value = var.admin_auth_secret }
+
+        { name = "DATABASE_SSL", value = "true" },
+        { name = "DATABASE_SSL_REJECT_UNAUTHORIZED", value = "false" }
       ]
+
 
       logConfiguration = {
         logDriver = "awslogs"
