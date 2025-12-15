@@ -73,9 +73,10 @@ resource "aws_db_instance" "postgres" {
   skip_final_snapshot    = true
 }
 
-data "aws_ecr_repository" "strapi" {
+resource "aws_ecr_repository" "strapi" {
   name = "strapi-app"
 }
+
 
 
 # ---------------- IAM ----------------
@@ -119,7 +120,8 @@ resource "aws_ecs_task_definition" "strapi" {
   container_definitions = jsonencode([
     {
       name  = "strapi"
-      image = "${data.aws_ecr_repository.strapi.repository_url}:${var.image_tag}"
+      image = "${aws_ecr_repository.strapi.repository_url}:${var.image_tag}
+"
       essential = true
 
       portMappings = [
