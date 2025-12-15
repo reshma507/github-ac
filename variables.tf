@@ -22,3 +22,9 @@ variable "db_password" {
 variable "db_allocated_storage" {
   default = 20
 }
+variable "app_keys" {}
+variable "api_token_salt" {}
+variable "admin_jwt_secret" {}
+variable "transfer_token_salt" {}
+variable "encryption_key" {}
+variable "admin_auth_secret" {}

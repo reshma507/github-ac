@@ -97,18 +97,16 @@ resource "aws_iam_role_policy_attachment" "ecs_policy" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
-resource "aws_iam_role_policy_attachment" "secrets_policy" {
-  role       = aws_iam_role.ecs_execution_role.name
-  policy_arn = "arn:aws:iam::aws:policy/SecretsManagerReadWrite"
-}
+# resource "aws_iam_role_policy_attachment" "secrets_policy" {
+#   role       = aws_iam_role.ecs_execution_role.name
+#   policy_arn = "arn:aws:iam::aws:policy/SecretsManagerReadWrite"
+# }
 
 # ---------------- ECS ----------------
 resource "aws_ecs_cluster" "strapi" {
   name = "strapi-cluster"
 }
-data "aws_secretsmanager_secret" "strapi" {
-  name = "strapi/secrets"
-}
+
 
 resource "aws_ecs_task_definition" "strapi" {
   family                   = "strapi-task"
@@ -119,56 +117,60 @@ resource "aws_ecs_task_definition" "strapi" {
   execution_role_arn       = aws_iam_role.ecs_execution_role.arn
 
   container_definitions = jsonencode([
-  {
-    name  = "strapi"
-    image = "${data.aws_ecr_repository.strapi.repository_url}:${var.image_tag}"
+    {
+      name  = "strapi"
+      image = "${data.aws_ecr_repository.strapi.repository_url}:${var.image_tag}"
+      essential = true
 
+      portMappings = [
+        {
+          containerPort = 1337
+          hostPort      = 1337
+          protocol      = "tcp"
+        }
+      ]
 
-    portMappings = [{
-      containerPort = 1337
-    }]
+      environment = [
+        { name = "HOST", value = "0.0.0.0" },
+        { name = "PORT", value = "1337" },
 
-    environment = [
-      { name = "HOST", value = "0.0.0.0" },
-      { name = "PORT", value = "1337" },
+        # Database
+        { name = "DATABASE_CLIENT", value = "postgres" },
+        { name = "DATABASE_HOST", value = aws_db_instance.postgres.address },
+        { name = "DATABASE_PORT", value = "5432" },
+        { name = "DATABASE_NAME", value = var.db_name },
+        { name = "DATABASE_USERNAME", value = var.db_username },
+        { name = "DATABASE_PASSWORD", value = var.db_password },
 
-      { name = "DATABASE_CLIENT", value = "postgres" },
-      { name = "DATABASE_HOST", value = aws_db_instance.postgres.address },
-      { name = "DATABASE_PORT", value = "5432" },
-      { name = "DATABASE_NAME", value = var.db_name },
-      { name = "DATABASE_USERNAME", value = var.db_username },
-      { name = "DATABASE_PASSWORD", value = var.db_password }
-    ]
+        # Strapi secrets
+        { name = "APP_KEYS", value = var.app_keys },
+        { name = "API_TOKEN_SALT", value = var.api_token_salt },
+        { name = "ADMIN_JWT_SECRET", value = var.admin_jwt_secret },
+        { name = "TRANSFER_TOKEN_SALT", value = var.transfer_token_salt },
+        { name = "ENCRYPTION_KEY", value = var.encryption_key },
+        { name = "ADMIN_AUTH_SECRET", value = var.admin_auth_secret }
+      ]
 
-    secrets = [
-      {
-        name      = "APP_KEYS"
-        valueFrom = "${data.aws_secretsmanager_secret.strapi.arn}:APP_KEYS::"
-      },
-      {
-        name      = "API_TOKEN_SALT"
-        valueFrom = "${data.aws_secretsmanager_secret.strapi.arn}:API_TOKEN_SALT::"
-      },
-      {
-        name      = "ADMIN_JWT_SECRET"
-        valueFrom = "${data.aws_secretsmanager_secret.strapi.arn}:ADMIN_JWT_SECRET::"
-      },
-      {
-        name      = "TRANSFER_TOKEN_SALT"
-        valueFrom = "${data.aws_secretsmanager_secret.strapi.arn}:TRANSFER_TOKEN_SALT::"
-      },
-      {
-        name      = "ENCRYPTION_KEY"
-        valueFrom = "${data.aws_secretsmanager_secret.strapi.arn}:ENCRYPTION_KEY::"
-      },
-      {
-        name      = "ADMIN_AUTH_SECRET"
-        valueFrom = "${data.aws_secretsmanager_secret.strapi.arn}:ADMIN_AUTH_SECRET::"
+      logConfiguration = {
+        logDriver = "awslogs"
+        options = {
+          "awslogs-group"         = "/ecs/strapi-service"
+          "awslogs-region"        = var.aws_region
+          "awslogs-stream-prefix" = "strapi"
+        }
       }
-    ]
-  }
-])
+
+      healthCheck = {
+        command     = ["CMD-SHELL", "curl -f http://localhost:1337 || exit 1"]
+        interval    = 30
+        timeout     = 5
+        retries     = 3
+        startPeriod = 60
+      }
+    }
+  ])
 }
+
 
 resource "aws_ecs_service" "strapi" {
   name            = "strapi-service"
