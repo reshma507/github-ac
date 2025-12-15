@@ -73,17 +73,17 @@ resource "aws_db_instance" "postgres" {
   skip_final_snapshot    = true
 }
 
-resource "aws_ecr_repository" "strapi" {
-  name = "strapi-app"
-}
 # resource "aws_ecr_repository" "strapi" {
 #   name = "strapi-app"
-
-#   lifecycle {
-#     prevent_destroy = false
-#     ignore_changes  = [repository_url]  # Terraform won't fail if repo already exists
-#   }
 # }
+resource "aws_ecr_repository" "strapi" {
+  name = "strapi-app"
+
+  lifecycle {
+    prevent_destroy = false
+    ignore_changes  = [repository_url]  # Terraform won't fail if repo already exists
+  }
+}
 
 
 
