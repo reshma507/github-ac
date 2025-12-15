@@ -3,6 +3,22 @@ variable "aws_region" {
 }
 
 variable "image_tag" {
-  description = "Docker image tag pushed to ECR"
-  type        = string
+  type = string
+}
+
+variable "db_name" {
+  type = string
+}
+
+variable "db_username" {
+  type = string
+}
+
+variable "db_password" {
+  type      = string
+  sensitive = true
+}
+
+variable "db_allocated_storage" {
+  default = 20
 }

@@ -1,2 +1,3 @@
-aws_region = "eu-north-1"
-image_tag = "strapi-app"
+db_name     = "strapi_db"
+db_username = "strapi_user"
+db_password = "strapi-pass"

@@ -2,7 +2,7 @@ name: CI - Build & Push to ECR
 
 on:
   push:
-    branches: ["main"]
+    branches: [ "main" ]
 
 jobs:
   build:
@@ -11,22 +11,52 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: aws-actions/configure-aws-credentials@v4
+      - name: Configure AWS
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
-      - name: Ensure ECR repository exists
-        run: |
-          aws ecr describe-repositories --repository-names strapi-app \
-          || aws ecr create-repository --repository-name strapi-app
-
-      - uses: aws-actions/amazon-ecr-login@v2
+      - name: Login to ECR
+        uses: aws-actions/amazon-ecr-login@v2
 
       - name: Build & Push Image
         run: |
           TAG=${GITHUB_SHA::7}
-          IMAGE=${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/strapi-app:$TAG
-          docker build -t $IMAGE .
-          docker push $IMAGE
+          docker build -t strapi-app:$TAG .
+          docker tag strapi-app:$TAG ${{ secrets.ECR_REPO }}:$TAG
+          docker push ${{ secrets.ECR_REPO }}:$TAG
+
+# name: CI - Build & Push to ECR
+
+# on:
+#   push:
+#     branches: ["main"]
+
+# jobs:
+#   build:
+#     runs-on: ubuntu-latest
+
+#     steps:
+#       - uses: actions/checkout@v4
+
+#       - uses: aws-actions/configure-aws-credentials@v4
+#         with:
+#           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+#           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+#           aws-region: ${{ secrets.AWS_REGION }}
+
+#       - name: Ensure ECR repository exists
+#         run: |
+#           aws ecr describe-repositories --repository-names strapi-app \
+#           || aws ecr create-repository --repository-name strapi-app
+
+#       - uses: aws-actions/amazon-ecr-login@v2
+
+#       - name: Build & Push Image
+#         run: |
+#           TAG=${GITHUB_SHA::7}
+#           IMAGE=${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/strapi-app:$TAG
+#           docker build -t $IMAGE .
+#           docker push $IMAGE
