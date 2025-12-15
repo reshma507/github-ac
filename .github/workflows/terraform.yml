@@ -28,5 +28,4 @@ jobs:
       - name: Terraform Apply
         run: |
          terraform apply -auto-approve \
-         -var="image_tag=${{ github.event.inputs.image_tag }}" \
-         -var="ecr_repo_url=${{ secrets.ECR_REPO }}"
+         -var="image_tag=${{ github.event.inputs.image_tag }}"

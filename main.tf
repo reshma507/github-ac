@@ -73,17 +73,18 @@ resource "aws_db_instance" "postgres" {
   skip_final_snapshot    = true
 }
 
+data "aws_ecr_repository" "strapi" {
+  name = "strapi-app"
+}
+
 # resource "aws_ecr_repository" "strapi" {
 #   name = "strapi-app"
-# }
-resource "aws_ecr_repository" "strapi" {
-  name = "strapi-app"
 
-  lifecycle {
-    prevent_destroy = false
-    ignore_changes  = [repository_url]  # Terraform won't fail if repo already exists
-  }
-}
+#   lifecycle {
+#     prevent_destroy = false
+#     ignore_changes  = [repository_url]  # Terraform won't fail if repo already exists
+#   }
+# }
 
 # ---------------- CLOUDWATCH LOG GROUP ----------------
 resource "aws_cloudwatch_log_group" "strapi" {
@@ -130,7 +131,7 @@ resource "aws_ecs_task_definition" "strapi" {
   cpu                      = "512"
   memory                   = "1024"
   execution_role_arn       = aws_iam_role.ecs_execution_role.arn
-  
+
   depends_on = [
     aws_cloudwatch_log_group.strapi
   ]
@@ -138,7 +139,8 @@ resource "aws_ecs_task_definition" "strapi" {
   container_definitions = jsonencode([
     {
       name  = "strapi"
-      image = "${var.ecr_repo_url}:${var.image_tag}"
+     image = "${data.aws_ecr_repository.strapi.repository_url}:${var.image_tag}"
+
 
       essential = true
 

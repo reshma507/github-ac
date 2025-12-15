@@ -29,7 +29,7 @@ variable "transfer_token_salt" {}
 variable "encryption_key" {}
 variable "admin_auth_secret" {}
 
-variable "ecr_repo_url" {
-  description = "Full URL of the ECR repository"
-  type        = string
-}
+# variable "ecr_repo_url" {
+#   description = "Full URL of the ECR repository"
+#   type        = string
+# }

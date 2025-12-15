@@ -1,7 +1,6 @@
 output "ecr_repository_url" {
-  value = var.ecr_repo_url
+  value = data.aws_ecr_repository.strapi.repository_url
 }
-
 
 
 output "rds_endpoint" {
